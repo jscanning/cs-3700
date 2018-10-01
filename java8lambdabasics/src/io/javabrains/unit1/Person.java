@@ -1,4 +1,4 @@
-package io.javabrains;
+package io.javabrains.unit1;
 
 public class Person {
 	private String firstname, lastname;
