@@ -1,7 +1,7 @@
 package homework.hw3.socks;
 
 public class Sock {
-	enum color {red, green, blue, orange};
+	static enum color {red, green, blue, orange};
 	private color myColor;
 	
 	Sock(color c)
