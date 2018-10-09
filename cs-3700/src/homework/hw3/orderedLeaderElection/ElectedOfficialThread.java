@@ -6,12 +6,14 @@
 package homework.hw3.orderedLeaderElection;
 
 import java.util.Random;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
 
 /**
  *
  * @author jscanning
  */
-public class ElectedOfficialThread extends Thread {
+public class ElectedOfficialThread extends Thread implements Comparable<ElectedOfficialThread> {
     rankThread rankthread;
 	CyclicBarrier barrier;
     
@@ -25,16 +27,17 @@ public class ElectedOfficialThread extends Thread {
     public ElectedOfficialThread(String name, int rank, rankThread r, CyclicBarrier b) {
         this.name = name;
         this.rank = rank;
-        leader = this.name;
+        leader = name;
         rankthread = r;
         barrier = b;
     }
     
-    public ElectedOfficialThread(String name, Random random, rankThread r){
+    public ElectedOfficialThread(String name, Random random, rankThread r, CyclicBarrier b){
         this.name = name;
-        rank = random.nextInt(2147483647 + 1 +2147483647) -2147483647;
-        leader = this.name;
+        rank = random.nextInt();
+        leader = name;
         rankthread = r;
+        barrier = b;
     }
     
     public int getRank(){
@@ -76,31 +79,53 @@ public class ElectedOfficialThread extends Thread {
     public void run(){
     	synchronized(this){
     		try {
+    			rankthread.interrupt();
     			do{
     				if(hasChanges) {
     					speak();
     					barrier.await();
     				}
     				wait();
-    			}while(!done); // idea is that some boolean controls how long this runs: boolean controlled by rank thread
-    		}catch(InterruptedException e){
+    			}while(!done);
+    			// idea is that some boolean controls how long this runs: boolean controlled by rank thread
+    		}catch(InterruptedException | BrokenBarrierException e){
     			e.printStackTrace();
-    		}
+    		} 
+    		
+    		if(hasChanges) {
+				speak();
+			}
+    		
+    		rankthread.done();
+    		rankthread.notify();
     	}
 
     }
 
-    private void produce() throws InterruptedException {
-        
-    }
-    
+	@Override
+	public int compareTo(ElectedOfficialThread o) {
+		if(o == null) {
+			throw new NullPointerException("null object in ElectedOfficialThread compareTo method");
+		}
+		
+		int result;
+		if(getRank() < o.getRank())
+			result = -1;
+		else if(getRank() == o.getRank())
+			result = 0;
+		else
+			result = 1;
+		
+		return result;
+	}
+	
+	 /*
     public static void main(String[] args){
     	final int DEFAULT_N = 4;
     	ElectedOfficialThread leader;
         String trueLeaderName;
         int numberOfOfficials = DEFAULT_N;
         ElectedOfficialThread[] threads = new ElectedOfficialThread[numberOfOfficials];
-        
-        
     }
+    */
 }
