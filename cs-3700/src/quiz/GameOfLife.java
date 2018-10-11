@@ -1,7 +1,14 @@
 package quiz;
 
 import java.security.InvalidParameterException;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Random;
+import java.util.Scanner;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class GameOfLife {
 /**
@@ -26,24 +33,42 @@ public class GameOfLife {
  */
 	Random rand = new Random();
 	public cellThread[][] grid;
+	CyclicBarrier barrier = new CyclicBarrier(5);
+	private boolean workLeft = true;
 	
 	public void initializeGrid(int x, int y) {
-		if((x + y) > 10) {
+		if((x * y) > 16) {
 			throw new InvalidParameterException("Grid size too high! Thread grid should be less than 10 cells.");
 		}
 		else {
+			grid = new cellThread[x][y];
 			for (int i = 0; i < grid.length; i++) {
 				for (int j = 0; j < grid[i].length; j++) {
 					grid[i][j] = new cellThread(i, j, rand.nextBoolean());
 				}
 			}
 		}
+		barrier = new CyclicBarrier(x * y + 1);
+	}
+	
+	public void printGrid(){
+		for (int i = 0; i < grid.length; i++) {
+			for (int j = 0; j < grid[i].length; j++) {
+				System.out.print(grid[i][j].numeric()+" ");
+			}
+			System.out.println();
+		}
+		System.out.println();
 	}
 	
 	class cellThread extends Thread{
 		private int xPos;
 		private int yPos;
 		private boolean alive;
+		private boolean nextGen;
+		@SuppressWarnings("unused")
+		private int cycle = 0;
+		private int livingNeighbors;
 		
 		public cellThread(int x, int y, boolean alive) {
 			xPos = x;
@@ -51,12 +76,15 @@ public class GameOfLife {
 			this.alive = alive;
 		}
 		
-		public void kill() {
-			setAlive(false);
+		public int numeric() {
+			if(alive)
+				return 1;
+			else
+				return 0;
 		}
-		
-		public void spawn() {
-			setAlive(true);
+
+		public void goToNextGen() {
+			setAlive(nextGen);
 		}
 
 		public boolean isLiving() {
@@ -68,13 +96,109 @@ public class GameOfLife {
 		}
 		
 		public void run() {
+			Queue<cellThread> cellQ = new LinkedList<>();
+			int left, right, up, down;
+			while(workLeft){
+				if(xPos > 0)
+					left = xPos - 1;
+				else
+					left = grid.length - 1;
+
+				if(yPos > 0)
+					up = yPos - 1;
+				else
+					up = grid[xPos].length - 1;
+
+				if(xPos < grid.length - 1)
+					right = xPos + 1;
+				else
+					right = 0;
+
+				if(yPos < grid[xPos].length - 1)
+					down = yPos + 1;
+				else
+					down = 0;
+
+				cellQ.add(grid[left][up]);
+				cellQ.add(grid[xPos][up]);
+				cellQ.add(grid[right][up]);
+				cellQ.add(grid[right][yPos]);
+				cellQ.add(grid[right][down]);
+				cellQ.add(grid[xPos][down]);
+				cellQ.add(grid[left][down]);
+				cellQ.add(grid[left][yPos]);
+
+				try {
+					nextGen = determineLife(isLiving(),cellQ);
+					barrier.await();
+					goToNextGen();
+
+				} catch (InterruptedException | BrokenBarrierException e) {
+					e.printStackTrace();
+				}
+				cycle += 1;
+			}
+			cellQ.clear();
 			
+		}
+
+		private boolean determineLife(boolean alive, Queue<cellThread> cellQ) {
+			boolean result = false;
+			this.livingNeighbors = 0;
+			if(!alive){ // is dead
+				for (cellThread cellThread : cellQ) {
+					if(cellThread.isLiving())
+						livingNeighbors += 1;
+				}
+				if(livingNeighbors == 3) {result = true;} // come to life
+				else {result = false;} // stay dead
+			}else{ // is alive
+				for (cellThread cellThread : cellQ) {
+					if(cellThread.isLiving())
+						livingNeighbors += 1;
+				}
+				if(livingNeighbors < 2 || livingNeighbors > 3)
+					result = false; // die
+				else
+					result = true; // live on
+			}
+			
+			return result;
 		}
 	}
 	
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
+		GameOfLife life = new GameOfLife();
+		life.initializeGrid(4, 4);
+		life.play(3*3);
+	}
 
+	private void play(int generations) {
+		Scanner sc = new Scanner(System.in);
+		for (cellThread[] cellThreads : grid) {
+			for (cellThread cellThread : cellThreads) {
+				cellThread.start();
+			}
+		}
+		try{
+			for(int i = 0; i < generations; i++){
+				printGrid();
+				System.out.println("Generation "+i);
+				System.out.println("Waiting for return key...");
+				//sc.nextLine();
+				try {
+					barrier.await();
+				} catch (InterruptedException | BrokenBarrierException e) {
+					e.printStackTrace();
+				}
+			}
+			barrier.await();
+			workLeft = false;
+			//barrier.await(500, TimeUnit.MILLISECONDS);
+		} catch (InterruptedException | BrokenBarrierException /*| TimeoutException*/ e1) {
+			e1.printStackTrace();
+		}
+		
 	}
 
 }
