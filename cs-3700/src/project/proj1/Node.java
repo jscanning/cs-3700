@@ -49,11 +49,10 @@ public class Node implements Comparable<Node> {
 
 	// / compare, based on frequency
 	public int compareTo(Node other) {
-		if (this.frequency == other.frequency) {
-
+		if (this.frequency == other.frequency) 
 			return this.character - other.character;
-		}
-		return this.frequency - other.frequency;
+		else
+			return this.frequency - other.frequency;
 	}
 
 	public String toString() {

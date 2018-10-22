@@ -1,5 +1,6 @@
 package project.proj1;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.PriorityQueue;
 import java.util.regex.Matcher;
@@ -12,7 +13,13 @@ public class Tree {
 	public static final boolean rightDirection = true;
 	private Node root;
 	private HashMap<Character, String> characterCodeMap;
-
+	static final Comparator<Node> nodeComparator = new Comparator<Node>(){
+		@Override
+		public int compare(Node o1, Node o2) {
+			return o1.compareTo(o2);
+		}
+	};
+	
 	public Tree() {
 		this.root = null;
 		this.characterCodeMap = null;
@@ -94,12 +101,12 @@ public class Tree {
 
 		if (leftTree != null) {
 			StringBuilder currentLeft = new StringBuilder(characterCode);
-			currentLeft.append(Tree.leftDirectionChar);
+			currentLeft.append(Tree.leftDirectionChar); // put a 0
 			addCharCodeToTable(leftTree, currentLeft);
 		}
 		if (rightTree != null) {
 			StringBuilder currentRight = new StringBuilder(characterCode);
-			currentRight.append(Tree.rightDirectionChar);
+			currentRight.append(Tree.rightDirectionChar); // put a 1
 			addCharCodeToTable(rightTree, currentRight);
 		}
 	}
@@ -115,7 +122,7 @@ public class Tree {
 	}
 
 	/**
-	 * Use this to buid the Huffman tree from the frequency map of a file
+	 * Use this to build the Huffman tree from the frequency map of a file
 	 * 
 	 * @param frequencyMap
 	 *            - the frequency of all characters, used to create the initial
@@ -138,21 +145,20 @@ public class Tree {
 	 * @return availableNodes - a priority queue containing single-node trees
 	 * */
 	private PriorityQueue<Node> buildInitialTrees(HashMap<Character, Integer> frequencyMap) {
-		PriorityQueue<Node> availableNodes = new PriorityQueue<>();
-		for(Character character:frequencyMap.keySet()){
-				Node availableNode = new Node((char)character,
-						frequencyMap.get(character));
+		PriorityQueue<Node> availableNodes = new PriorityQueue<Node>(nodeComparator);
+		for(Character character : frequencyMap.keySet()){
+				Node availableNode = new Node((char)character, frequencyMap.get(character));
 				availableNodes.add(availableNode);
 			}
-		
 		return availableNodes;
 	}
 
 	/**
 	 * 
-	 * The left node contains the bigger value The last node in the priorty
+	 * The left node contains the bigger value The last node in the priority
 	 * queue holds the whole tree
-	 * */
+	 * 
+	 */
 	private Node joinAllTreeNodes(PriorityQueue<Node> availableNodes) {
 		while (availableNodes.size() > 1) {
 			Node right = availableNodes.poll();

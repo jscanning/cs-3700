@@ -2,12 +2,17 @@ package project.proj1;
 
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
@@ -15,15 +20,15 @@ public class Encoder implements Runnable{
 	final static Logger logger = Logger.getLogger(Encoder.class.getName());
 	
 	private Tree huffmanTree;
-	private ArrayList<String> sourceData;
-	private String resultFilepath;
+	private ArrayList<String> fileData;
+	private String outputDestination;
 	private Integer partIndex;
 	private static volatile long freqTableConstructionTime = 0;
 	
 	public Encoder(ArrayList<String> sourceData, String path, Integer partIndex){
-		this.sourceData = sourceData;
+		this.fileData = sourceData;
 		this.huffmanTree = new Tree();
-		this.resultFilepath = path;
+		this.outputDestination = path;
 		this.setPartIndex(partIndex);
 	}
 	
@@ -31,15 +36,18 @@ public class Encoder implements Runnable{
 		logger.info(Thread.currentThread().getName() + " started generating tree data.");
 		
 		long startTime = System.currentTimeMillis();
-		HashMap<Character, Integer> freqMap = buildFrequencyMap(sourceData);
+		long nanoStartTime = System.nanoTime();
+		HashMap<Character, Integer> freqMap = buildFrequencyMap(fileData);
 		huffmanTree.buildTree(freqMap);
+		long nanoEndTime = System.nanoTime();
 		long endTime = System.currentTimeMillis();
 		
-		logger.info(Thread.currentThread().getName() + " generated tree in " + (endTime - startTime) + " milliseconds.");
+		logger.info(Thread.currentThread().getName() + " generated tree in " + (endTime - startTime) 
+				+ " milliseconds OR " + (nanoEndTime - nanoStartTime) + " nanoseconds.");
 		
 		String compressed = compressData();
 		
-		sourceData.clear();
+		fileData.clear();
 		
 		return compressed;
 	}
@@ -73,12 +81,15 @@ public class Encoder implements Runnable{
 	private String compressData(){
 		logger.info(Thread.currentThread().getName() + " started compressing.");
 		long startTime = System.currentTimeMillis();
+		long nanoStartTime = System.nanoTime();
 		StringBuilder compressed = new StringBuilder();
-		for(String str : sourceData){
+		for(String str : fileData){
 			compressed.append(compressString(str));
 		}
+		long nanoEndTime = System.nanoTime();
 		long endTime = System.currentTimeMillis();
-		logger.info(Thread.currentThread().getName() + " finished compressing in " + (endTime - startTime) + " milliseconds.");
+		logger.info(Thread.currentThread().getName() + " finished compressing in " + (endTime - startTime) 
+				+ " milliseconds OR " + (nanoEndTime - nanoStartTime) + " nanoseconds.");
 		return compressed.toString();
 	}
 	
@@ -98,27 +109,29 @@ public class Encoder implements Runnable{
 	}
 	
 	private void flushContentsToFile(String encodedResult) {
+		
+		Path treeOutputPath = Paths.get(String.format(outputDestination + HuffmanInterface.treeFileExtension, this.getPartIndex()));
+		Path compressedOutputPath = Paths.get(String.format(outputDestination + HuffmanInterface.compressedFileExtension, this.getPartIndex()));
+		long fileSize = 0;
 		try {
-			PrintWriter out = new PrintWriter(new BufferedWriter(
-					new FileWriter(String.format(resultFilepath
-							+ HuffmanInterface.treeFileExtension,
-							this.getPartIndex()))));
+			PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(treeOutputPath.toString())));
 			out.println(generateFileTree()); // output result
 			out.close();
 
-			FileOutputStream fos = new FileOutputStream(new File(String.format(
-					resultFilepath + HuffmanInterface.compressedFileExtension,
-					this.getPartIndex())));
+			FileOutputStream fos = new FileOutputStream(new File(compressedOutputPath.toString()));
 			ByteArrayOutputStream binaryOutputStream = new ByteArrayOutputStream();
 			byte[] fileData = ByteConverter.toByteArray(encodedResult);
 			binaryOutputStream.write(fileData);
 			// Put data
 			binaryOutputStream.writeTo(fos);
 			fos.close();
+			fileSize = Files.size(compressedOutputPath);
 		} catch (IOException e) {
 			System.err.println("Thread failed to flush to file");
 		}
-		logger.info(Thread.currentThread().getName() + "finished flushing");
+		
+		logger.info(Thread.currentThread().getName() + " finished flushing to destination:" 
+				+ compressedOutputPath.toString() + " (compressed to: " + fileSize + " bytes)");
 	}
 	
 	private String generateFileTree(){

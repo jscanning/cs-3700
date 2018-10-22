@@ -1,57 +1,75 @@
 package project.proj1.tests;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Scanner;
 
-import project.proj1.Encoder;
-import project.proj1.HuffmanInterface;
+import project.proj1.ThreadedDecoder;
+import project.proj1.ThreadedEncoder;
 
 public class ParallelHuffmanTest {
 	//C:\Users\Jeremy Canning\git\cs-3700\cs-3700\src\project\proj1
 
+	static boolean isQuiet = false;
+	
 	public static void main(String[] args) throws IOException {
-		Path usConst = Paths.get("src/project/proj1/USConstitution.txt");
-		long initfileSize = Files.size(usConst);
-		System.out.println(usConst.toAbsolutePath());
+		System.out.println("Do you want to decode as well as encode? Y/N");
+		Scanner kb = new Scanner(System.in);
+		char boolInput = kb.nextLine().charAt(0);
+		while (boolInput != 'Y' && boolInput != 'y' && boolInput != 'n' && boolInput != 'N') {
+			System.out.println("Invalid input. Choose (Y)es or (N)o.");
+			boolInput=kb.nextLine().charAt(0);
+		}
+		boolean doDecode;
+		if(boolInput == 'y' || boolInput == 'Y')
+			doDecode = true;
+		else
+			doDecode = false;
+		System.out.println("Enter desired maximum number of threads to use: (between 1 and 10)");
+			int numInput = kb.nextInt();
+		if(Integer.max(numInput, 10) == numInput) {
+			numInput = 10;
+			System.out.println("Input over maximum: Defaulting to 10");
+		}
+		else if(Integer.min(numInput, 1) == numInput) {
+			numInput = 1;
+			System.out.println("Input over minimum: Defaulting to 1");
+		}
+		kb.close();
 		
-		List<String> lines = null;
+		int simultaeneousTasksAllowed = numInput;
+		long decodingTime = 0, encodingTime = 0, startTime, endTime, initFileSize;
+		
+		Path usConst = Paths.get("src/project/proj1/USConstitution.txt");
+		initFileSize = Files.size(usConst);
+		System.out.println(usConst.toAbsolutePath());
+				
+		ThreadedEncoder encoder = new ThreadedEncoder(usConst.toString(), simultaeneousTasksAllowed, isQuiet);
+		ThreadedDecoder decoder = new ThreadedDecoder(usConst.toString(), simultaeneousTasksAllowed, isQuiet);
+		
+		startTime = System.currentTimeMillis();
 		try {
-			lines = Files.readAllLines(usConst);
-		} catch (IOException e) {
+			encoder.runThreads();
+		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		if(lines == null){
-			System.err.println("Lines == null");
+		endTime = System.currentTimeMillis();
+		encodingTime = endTime - startTime;
+		
+		if(doDecode) {
+			startTime = System.currentTimeMillis();
+			decoder.runThreads();
+			endTime = System.currentTimeMillis();
+			decodingTime = endTime - startTime;
 		}
-		ArrayList<String> src = (ArrayList<String>) lines;
 		
-		Path out = Paths.get("src/project/proj1/output");
+		System.out.println("Encoding time: " + encodingTime + " milliseconds");
+		if(doDecode) {System.out.println("Decoding time: " + decodingTime + " milliseconds");}
+		System.out.println("Total Run Time (including file I/O): " + (encodingTime + decodingTime) + " milliseconds");
+		System.out.println("Initial file size: " + initFileSize + " bytes");
 		
-		System.out.println(out.toAbsolutePath());
-		
-		Encoder encoder = new Encoder(src, out.toString(), 0);
-		
-		long startTime = System.currentTimeMillis();
-		encoder.run();
-		long endTime = System.currentTimeMillis();
-		
-		Path compressedOutput = Paths.get(String.format(out.toString()+ HuffmanInterface.treeFileExtension, encoder.getPartIndex()));
-		
-		long resultFileSize = Files.size(compressedOutput);
-		long decrease = initfileSize - resultFileSize;
-		long percentDecrease = (long)((double)decrease / initfileSize * 100);
-		
-		System.out.println("Total Run Time (including file I/O): " + (endTime - startTime) + " milliseconds");
-		System.out.println("Initial file size: " + initfileSize + " bytes");
-		System.out.println("File size after Huffman coding: " + resultFileSize + " bytes");
-		System.out.println(percentDecrease + "% Decrease");
 	}
 
 }

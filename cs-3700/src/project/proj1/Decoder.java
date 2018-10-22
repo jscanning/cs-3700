@@ -3,6 +3,7 @@ package project.proj1;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -13,7 +14,11 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.BitSet;
 import java.util.logging.Logger;
-
+/**
+ *
+ * @author jscanning
+ *
+ */
 public class Decoder implements Runnable {
 	private Node huffmanTree;
 	private Node currentNode;
@@ -24,6 +29,13 @@ public class Decoder implements Runnable {
 	
 	public Decoder(String filePath, Integer partIndex){
 		this.filePath = filePath;
+		this.partIndex = partIndex;
+		huffmanTree = null;
+	}
+	
+	public Decoder(String filePath, Node root, Integer partIndex) {
+		this.filePath = filePath;
+		this.huffmanTree = root;
 		this.partIndex = partIndex;
 	}
 	
@@ -49,23 +61,25 @@ public class Decoder implements Runnable {
 	public String decode(){
 		logger.info(Thread.currentThread().getName() + " started decompressing.");
 		StringBuilder decodedStr = new StringBuilder();
-		
+		long startTime = System.currentTimeMillis();
+		long nanoStartTime = System.nanoTime();
 		for (int i = 0; i < dataSet.size(); i++) {
 			Character decoded = compute(dataSet.get(i));
 			if(decoded != null)
 				decodedStr.append(decoded);
 		}
-		logger.info(Thread.currentThread().getName() + " finishing decompressing.");
+		long nanoEndTime = System.nanoTime();
+		long endTime = System.currentTimeMillis();
+		logger.info(Thread.currentThread().getName() + " finishing decompressing in " + (endTime - startTime) 
+				+ " milliseconds OR " + (nanoEndTime - nanoStartTime) + " nanoseconds.");
 		return decodedStr.toString();
 	}
 
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
 		loadData();
 		String decoded = decode();
 		writeToFile(decoded);
-
 	}
 
 	private void writeToFile(String decoded) {
@@ -84,18 +98,19 @@ public class Decoder implements Runnable {
 	}
 
 	private void loadData() {
-		// TODO Auto-generated method stub
 		logger.info(Thread.currentThread().getName() + " started collecting tree and file data.");
 		try{
-			BufferedReader reader = new BufferedReader(new FileReader(String.format(filePath + HuffmanInterface.treeFileExtension, this.partIndex)));
-			
-			Tree tree = new Tree();
-			tree.deserialize(reader.readLine());
-			huffmanTree = tree.getInnerTree();
+			String fileName;
+			if(huffmanTree == null) {
+				fileName = String.format(filePath + HuffmanInterface.treeFileExtension, this.partIndex);
+				BufferedReader reader = new BufferedReader(new FileReader(String.format(fileName)));
+				Tree tree = new Tree();
+				tree.deserialize(reader.readLine());
+				huffmanTree = tree.getInnerTree();
+				reader.close();
+			}
+			fileName = String.format(filePath + HuffmanInterface.compressedFileExtension, this.partIndex);;
 			this.currentNode = huffmanTree;
-			File file = new File(String.format(filePath + HuffmanInterface.compressedFileExtension, this.partIndex));
-			
-			String fileName = String.format(filePath + HuffmanInterface.compressedFileExtension, this.partIndex);
 			byte[] fileData = read(fileName);
 			dataSet = ByteConverter.fromByteArray(fileData);
 		} catch(IOException e){

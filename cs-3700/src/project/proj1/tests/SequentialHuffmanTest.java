@@ -7,13 +7,11 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
+import project.proj1.Decoder;
 import project.proj1.Encoder;
 import project.proj1.HuffmanInterface;
 
 public class SequentialHuffmanTest {
-	
-	
-	//C:\Users\Jeremy Canning\git\cs-3700\cs-3700\src\project\proj1
 
 	public static void main(String[] args) throws IOException {
 		Path usConst = Paths.get("src/project/proj1/USConstitution.txt");
@@ -40,17 +38,27 @@ public class SequentialHuffmanTest {
 		long startTime = System.currentTimeMillis();
 		encoder.run();
 		long endTime = System.currentTimeMillis();
+		long encodingTime = endTime - startTime;
 		
-		Path compressedOutput = Paths.get(String.format(out.toString()+ HuffmanInterface.treeFileExtension, encoder.getPartIndex()));
+		Path compressedOutput = Paths.get(String.format(out.toString()+ HuffmanInterface.compressedFileExtension, encoder.getPartIndex()));
+	
+		Decoder decoder = new Decoder(out.toString(), 0);
+		
+		startTime = System.currentTimeMillis();
+		decoder.run();
+		endTime = System.currentTimeMillis();
+		long decodingTime = endTime - startTime;
 		
 		long resultFileSize = Files.size(compressedOutput);
 		long decrease = initfileSize - resultFileSize;
-		long percentDecrease = (long)((double)decrease / initfileSize * 100);
+		double percentDecrease = ((double)decrease / initfileSize * 100);
 		
-		System.out.println("Total Run Time (including file I/O): " + (endTime - startTime) + " milliseconds");
+		System.out.println("Total Encoding time: " + encodingTime + " milliseconds");
+		System.out.println("Total Decoding time: " + decodingTime + " milliseconds");
+		System.out.println("Total Run Time (including file I/O): " + (encodingTime + decodingTime) + " milliseconds");
 		System.out.println("Initial file size: " + initfileSize + " bytes");
-		System.out.println("File size after Huffman coding: " + resultFileSize + " bytes");
-		System.out.println(percentDecrease + "% Decrease");
+		System.out.println("Post-Huffman size: " + resultFileSize + " bytes");
+		System.out.println((int)percentDecrease + "% Decrease");
 	}
 
 }
