@@ -23,14 +23,13 @@ public class ThreadedDecoder extends HuffmanInterface {
 	
 	public void runThreads(){
 		jobs = new Thread[maxTasksCount];
-		for(int threadIndex = 0; threadIndex < maxTasksCount -1; threadIndex++){
-			Decoder decoder;
-			decoder = new Decoder(filepath, threadIndex);
+		for(int threadIndex = 0; threadIndex < maxTasksCount-1; threadIndex++){
+			Decoder decoder = new Decoder(filepath, threadIndex);
 			jobs[threadIndex] = new Thread(decoder);
-			jobs[threadIndex].run();
+			jobs[threadIndex].start();
 		}
 		
-		for(int threadIndex = 0; threadIndex < maxTasksCount - 1; threadIndex++){
+		for(int threadIndex = 0; threadIndex < maxTasksCount-1; threadIndex++){
 			try{
 				jobs[threadIndex].join();
 			}catch(InterruptedException e){

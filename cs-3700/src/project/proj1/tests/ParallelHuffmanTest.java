@@ -1,7 +1,6 @@
 package project.proj1.tests;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Scanner;
@@ -9,21 +8,22 @@ import java.util.Scanner;
 import project.proj1.ThreadedDecoder;
 import project.proj1.ThreadedEncoder;
 
+@SuppressWarnings("unused")
 public class ParallelHuffmanTest {
 	//C:\Users\Jeremy Canning\git\cs-3700\cs-3700\src\project\proj1
 
 	static boolean isQuiet = false;
 	
 	public static void main(String[] args) throws IOException {
-		System.out.println("Do you want to decode as well as encode? Y/N");
+		/*System.out.println("Do you want to decode as well as encode? Y/N");
 		Scanner kb = new Scanner(System.in);
 		char boolInput = kb.nextLine().charAt(0);
 		while (boolInput != 'Y' && boolInput != 'y' && boolInput != 'n' && boolInput != 'N') {
 			System.out.println("Invalid input. Choose (Y)es or (N)o.");
 			boolInput=kb.nextLine().charAt(0);
-		}
-		boolean doDecode;
-		if(boolInput == 'y' || boolInput == 'Y')
+		}*/
+		boolean doDecode = true;
+		/*if(boolInput == 'y' || boolInput == 'Y')
 			doDecode = true;
 		else
 			doDecode = false;
@@ -37,17 +37,16 @@ public class ParallelHuffmanTest {
 			numInput = 1;
 			System.out.println("Input over minimum: Defaulting to 1");
 		}
-		kb.close();
+		kb.close();*/
 		
-		int simultaeneousTasksAllowed = numInput;
-		long decodingTime = 0, encodingTime = 0, startTime, endTime, initFileSize;
+		int simultaeneousTasksAllowed = 4;
+		long decodingTime = 0, encodingTime = 0, startTime, endTime;
 		
 		Path usConst = Paths.get("src/project/proj1/USConstitution.txt");
-		initFileSize = Files.size(usConst);
 		System.out.println(usConst.toAbsolutePath());
 				
 		ThreadedEncoder encoder = new ThreadedEncoder(usConst.toString(), simultaeneousTasksAllowed, isQuiet);
-		ThreadedDecoder decoder = new ThreadedDecoder(usConst.toString(), simultaeneousTasksAllowed, isQuiet);
+		ThreadedDecoder decoder = new ThreadedDecoder(usConst.toString(), simultaeneousTasksAllowed+1, isQuiet);
 		
 		startTime = System.currentTimeMillis();
 		try {
@@ -68,7 +67,7 @@ public class ParallelHuffmanTest {
 		System.out.println("Encoding time: " + encodingTime + " milliseconds");
 		if(doDecode) {System.out.println("Decoding time: " + decodingTime + " milliseconds");}
 		System.out.println("Total Run Time (including file I/O): " + (encodingTime + decodingTime) + " milliseconds");
-		System.out.println("Initial file size: " + initFileSize + " bytes");
+		//System.out.println("Initial file size: " + initFileSize + " bytes");
 		
 	}
 

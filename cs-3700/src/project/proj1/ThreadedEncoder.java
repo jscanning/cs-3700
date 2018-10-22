@@ -33,8 +33,7 @@ public class ThreadedEncoder extends HuffmanInterface {
 	}
 
 	private void readFile() throws IOException{
-		if(!isQuiet)
-			logger.info("Started reading the file.");
+		logger.info("Started reading the file.");
 		
 		File sourceFile = new File(filepath);
 		
@@ -50,17 +49,16 @@ public class ThreadedEncoder extends HuffmanInterface {
 		}
 		initializeThreadParameters(fileData.size(), maxTasksCount);
 		
-		if(!isQuiet)
-			logger.info("Finished reading the file.");
+		logger.info("Finished reading the file.");
 	}
 
-	private void initializeThreadParameters(int fileLines, Integer threadsCount) {
-		if(threadsCount > 1){
-			buffersPerThread = (fileLines / (threadsCount - 1));
+	private void initializeThreadParameters(int fileLines, Integer maxTasksCount) {
+		if(maxTasksCount > 1){
+			buffersPerThread = (fileLines / (maxTasksCount - 1));
 		}else{
 			buffersPerThread = 0;
 		}
-		jobs = new Thread[threadsCount];
+		jobs = new Thread[maxTasksCount];
 	}
 	
 	private ArrayList<String> readFilePart(int seekToBuffer, int reqBufferCount){
@@ -81,14 +79,12 @@ public class ThreadedEncoder extends HuffmanInterface {
 	public void runThreads() throws InterruptedException{
 		int seekToBuffer = 0;
 		int reqBufferCount = buffersPerThread;
-		if(!isQuiet)
-			logger.info("Started reading file to compress.");
+		logger.info("Started reading file to compress.");
 		
 		for(int index = 0; index < (maxTasksCount - 1); index++){
 			createThread(seekToBuffer, reqBufferCount, index);
 			String logMessage = "Compressing thread " + (index) + " started";
-			if(!isQuiet)
-				logger.info(logMessage);
+			logger.info(logMessage);
 			seekToBuffer += buffersPerThread;
 		}
 		long startTime = System.currentTimeMillis();
@@ -100,20 +96,21 @@ public class ThreadedEncoder extends HuffmanInterface {
 		if(fileData.size() - lastThreadPos > 0){
 			createThread(lastThreadPos, fileData.size()-lastThreadPos, maxTasksCount -1);
 			String logMessage = "Compressing thread " + (maxTasksCount) + " started.";
-			if(!isQuiet)
-				logger.info(logMessage);
+			logger.info(logMessage);
 			jobs[maxTasksCount - 1].start();
 		}else{
 			// one thread is unneeded
 			maxTasksCount--;
 		}
+		fileData.clear();
+		
 		for(int i = 0; i < maxTasksCount; i++){
 			jobs[i].join();
 		}
 		long endTime = System.currentTimeMillis();
 		long executionTime = endTime - startTime;
-		logger.info("Total compression time: " + executionTime);
-		fileData.clear();
+		logger.info("Total compression time: " + executionTime + "\n");
+		
 	}
 
 }
