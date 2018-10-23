@@ -15,31 +15,9 @@ public class ParallelHuffmanTest {
 	static boolean isQuiet = false;
 	
 	public static void main(String[] args) throws IOException {
-		/*System.out.println("Do you want to decode as well as encode? Y/N");
-		Scanner kb = new Scanner(System.in);
-		char boolInput = kb.nextLine().charAt(0);
-		while (boolInput != 'Y' && boolInput != 'y' && boolInput != 'n' && boolInput != 'N') {
-			System.out.println("Invalid input. Choose (Y)es or (N)o.");
-			boolInput=kb.nextLine().charAt(0);
-		}*/
-		boolean doDecode = true;
-		/*if(boolInput == 'y' || boolInput == 'Y')
-			doDecode = true;
-		else
-			doDecode = false;
-		System.out.println("Enter desired maximum number of threads to use: (between 1 and 10)");
-			int numInput = kb.nextInt();
-		if(Integer.max(numInput, 10) == numInput) {
-			numInput = 10;
-			System.out.println("Input over maximum: Defaulting to 10");
-		}
-		else if(Integer.min(numInput, 1) == numInput) {
-			numInput = 1;
-			System.out.println("Input over minimum: Defaulting to 1");
-		}
-		kb.close();*/
-		
+		boolean doDecode = true;		
 		int simultaeneousTasksAllowed = 4;
+		
 		long decodingTime = 0, encodingTime = 0, startTime, endTime;
 		
 		Path usConst = Paths.get("src/project/proj1/USConstitution.txt");

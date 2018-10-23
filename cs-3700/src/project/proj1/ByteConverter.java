@@ -36,5 +36,4 @@ public class ByteConverter {
 	    }
 	    return bytes;
 	}
-
 }

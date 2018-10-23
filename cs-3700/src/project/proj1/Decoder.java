@@ -12,11 +12,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.BitSet;
 import java.util.logging.Logger;
-/**
- *
- * @author jscanning
- *
- */
+
 public class Decoder implements Runnable {
 	private Node huffmanTree;
 	private Node currentNode;

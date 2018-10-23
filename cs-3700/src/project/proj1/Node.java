@@ -40,7 +40,6 @@ public class Node implements Comparable<Node> {
 		this.right = right;
 	}
 
-	// / is the node a leaf node
 	public boolean isLeaf() {
 		assert (left == null && right == null)
 		|| (left != null && right != null);

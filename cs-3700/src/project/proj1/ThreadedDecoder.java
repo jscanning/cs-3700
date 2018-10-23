@@ -2,9 +2,6 @@ package project.proj1;
 
 public class ThreadedDecoder extends HuffmanInterface {
 	
-	/**
-	 * 
-	 */
 	private String outputDestination;
 	private Thread jobs[];
 	

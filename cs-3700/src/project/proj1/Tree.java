@@ -153,12 +153,6 @@ public class Tree {
 		return availableNodes;
 	}
 
-	/**
-	 * 
-	 * The left node contains the bigger value The last node in the priority
-	 * queue holds the whole tree
-	 * 
-	 */
 	private Node joinAllTreeNodes(PriorityQueue<Node> availableNodes) {
 		while (availableNodes.size() > 1) {
 			Node right = availableNodes.poll();

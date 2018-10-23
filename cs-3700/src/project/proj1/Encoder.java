@@ -16,7 +16,6 @@ import java.util.logging.Logger;
 
 public class Encoder implements Runnable{
 	final static Logger logger = Logger.getLogger(Encoder.class.getName());
-	
 	private Tree huffmanTree;
 	private ArrayList<String> fileData;
 	private String outputDestination;
@@ -44,13 +43,9 @@ public class Encoder implements Runnable{
 				+ " milliseconds OR " + (nanoEndTime - nanoStartTime) + " nanoseconds.");
 		
 		String compressed = compressData();
-		
 		fileData.clear();
-		
 		return compressed;
 	}
-	
-	
 
 	public Tree getTree(){
 		return huffmanTree;
@@ -107,7 +102,6 @@ public class Encoder implements Runnable{
 	}
 	
 	private void flushContentsToFile(String encodedResult) {
-		
 		Path treeOutputPath = Paths.get(String.format(outputDestination + HuffmanInterface.treeFileExtension, this.getPartIndex()));
 		Path compressedOutputPath = Paths.get(String.format(outputDestination + HuffmanInterface.compressedFileExtension, this.getPartIndex()));
 		long fileSize = 0;
@@ -127,7 +121,6 @@ public class Encoder implements Runnable{
 		} catch (IOException e) {
 			System.err.println("Thread failed to flush to file");
 		}
-		
 		logger.info(Thread.currentThread().getName() + " finished flushing to destination:" 
 				+ compressedOutputPath.toString() + " (compressed to: " + fileSize + " bytes)");
 	}
