@@ -1,10 +1,10 @@
 package rockPaperScissors;
 
-public enum Hand 
+import java.io.Serializable;
+
+public enum Hand implements Serializable
 {
 	ROCK, PAPER, SCISSORS;
-	
-	enum Result {WIN, LOSE, DRAW}
 	
 	public Result evaluate(Hand other)
 	{
