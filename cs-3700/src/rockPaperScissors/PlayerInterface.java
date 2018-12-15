@@ -21,14 +21,14 @@ public interface PlayerInterface {
 		 * Sends the choice of move to all players.
 		 * @param myMove
 		 */
-		void send(Hand myMove);
+		void sendMove(Hand myMove);
 		
 		/**
 		 * Receives the move of the target player.
 		 * @param sender
 		 * @return
 		 */
-		Hand receive();
+		Hand receiveMove();
 		
 		void sendReady();
 		

@@ -19,7 +19,7 @@ public class Player implements PlayerInterface {
 	private boolean connected = false;
 	
 	Player(InetAddress group, int port){
-		connect(group, port);
+		connected = connect(group, port);
 	}
 	
 	Player() throws UnknownHostException{
@@ -43,8 +43,20 @@ public class Player implements PlayerInterface {
 		this.port = port;
 		this.group = group;
 		try {
+			System.out.println("Attempting to connect");
 			mySocket = new MulticastSocket(port);
+			mySocket.setInterface(group);
 			mySocket.setLoopbackMode(true);
+			mySocket.joinGroup(group);
+			mySocket.setTimeToLive(50);
+			System.out.println("Connected to port");
+			//System.out.println(mySocket.getTimeToLive());
+			DatagramPacket hi = new DatagramPacket("Hello".getBytes(), "Hello".length(), group, port);
+			mySocket.send(hi);
+			
+			byte[] buf = new byte[200];
+			DatagramPacket recv = new DatagramPacket(buf, buf.length);
+			mySocket.receive(recv);
 		} catch (IOException e) {
 			e.printStackTrace();
 			return false;
@@ -53,17 +65,18 @@ public class Player implements PlayerInterface {
 	}
 
 	@Override
-	public void send(Hand myMove) {
+	public void sendMove(Hand myMove) {
 		try {
-			DatagramPacket msg = new DatagramPacket(myMove.toString().getBytes(StandardCharsets.UTF_8), myMove.toString().length(), group, port);
+			byte[] buf = myMove.toString().getBytes(StandardCharsets.UTF_8);
+			DatagramPacket msg = new DatagramPacket(buf, buf.length, group, port);
 			mySocket.send(msg);
 		} catch (Exception e) {
-			// TODO: handle exception
+			e.printStackTrace();
 		}
 	}
 
 	@Override
-	public Hand receive() {
+	public Hand receiveMove() {
 		byte[] buf = new byte[1000];
 		DatagramPacket recv = new DatagramPacket(buf, buf.length);
 		try {
@@ -78,7 +91,8 @@ public class Player implements PlayerInterface {
 	@Override
 	public void sendReady() {
 		String msg = "ready";
-		DatagramPacket snd = new DatagramPacket(msg.getBytes(StandardCharsets.UTF_8), msg.length(), group, port);
+		byte[] buf = msg.getBytes(StandardCharsets.UTF_8);
+		DatagramPacket snd = new DatagramPacket(buf, buf.length, group, port);
 		try {
 			mySocket.send(snd);
 		} catch (IOException e) {
@@ -90,17 +104,19 @@ public class Player implements PlayerInterface {
 	public boolean waitForReady() {
 		int readiesReceived = 0;
 		int messagesReceived = 0;
-		byte buf[] = new byte[1000];
+		byte buf[] = new byte[200];
 		DatagramPacket recv = new DatagramPacket(buf, buf.length);
-		while(messagesReceived < 2 || readiesReceived < 2){
+		System.out.println("waitForReady: entering while loop");
+		while(messagesReceived < 2){
 			try {
 				mySocket.receive(recv);
+				System.out.println("Received: " + recv.getData().toString());
+				messagesReceived += 1;
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 			String str = new String(recv.getData(), StandardCharsets.UTF_8);
 			if(str.equalsIgnoreCase("ready")) {readiesReceived += 1; }
-			messagesReceived += 1;
 		}	
 		if(readiesReceived == 2) return true;
 		else return false;
@@ -109,17 +125,25 @@ public class Player implements PlayerInterface {
 	public void play(){
 		assert connected == true;
 		Hand myMove = randomRps();
-		send(myMove);
-		Hand moveA = receive();
-		Hand moveB = receive();
+		System.out.println("Sending my move");
+		sendMove(myMove);
+		System.out.println("Waiting for other player's moves ...");
+		Hand moveA = receiveMove();
+		System.out.println("Received one");
+		Hand moveB = receiveMove();
+		System.out.println("Received both other players moves! /nEvaluating outcome ...");
 		myScore += evaluateMoves(myMove, moveA, moveB);
+		System.out.printf("My new score is: %d", myScore);
 		otherScores = shareScores(myScore);
 	}
 	
 	public void multipleGames(int numGames){
+		assert connected = true;
 		int gamesPlayed = 0;
 		while(gamesPlayed < numGames){
+			System.out.println("I'm ready!");
 			sendReady();
+			System.out.println("Waiting for other players to ready .....");
 			waitForReady();
 			play();
 		}

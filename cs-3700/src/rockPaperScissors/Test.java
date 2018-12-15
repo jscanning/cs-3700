@@ -19,33 +19,20 @@ public class Test {
 		Scanner kb = new Scanner(System.in);
 		System.out.println("Enter number of games to play: ");
 		String arg2 = String.valueOf(kb.nextInt());
-		String[] exec_cmd = {"java", "-cp", "bin", "Player", arg0, arg1, arg2};
+		String[] exec_cmd = {"java", "-cp", "./target/classes/", "rockPaperScissors.Player", arg0, arg1, arg2};
 
-		try {
-			String[] cmd = {"javac.exe", "Player.java"};
-			ProcessBuilder compile = new ProcessBuilder(cmd);
-			compile.directory(new File(workingDir));
-			//System.out.println(compile.directory().getAbsolutePath());
-			Process p = compile.start();
-			p.waitFor();
-			p.destroy();
-		} catch (IOException | InterruptedException e) {
-			System.out.println("Error");
-			e.printStackTrace();
-		}finally{
-			try{
+		try{
 			ProcessBuilder pb = new ProcessBuilder(exec_cmd);
 			pb.directory(new File(workingDir));
 			pb.inheritIO();
 			System.out.println(Arrays.toString(pb.command().toArray()));
-			//System.out.println(pb.directory().getAbsolutePath());
+			System.out.println(pb.directory().getAbsolutePath());
 			Process[] players = {pb.start(), pb.start(), pb.start()};
 			for(Process player : players) {
 				player.waitFor();
 			}
-			}catch(IOException | InterruptedException e){
-				e.printStackTrace();
-			}
+		}catch(IOException | InterruptedException e){
+			e.printStackTrace();
 		}
 		kb.close();
 	}
